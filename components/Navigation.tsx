@@ -68,9 +68,10 @@ export default function Navigation() {
               className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">
               Login
             </a>
-            <Link href="/contact" className="btn-primary text-sm px-5 py-2">
-              Get Started
-            </Link>
+            <a href="https://billing.voxclouds.com/signup/" target="_blank" rel="noopener noreferrer"
+              className="btn-primary text-sm px-5 py-2">
+              Sign Up
+            </a>
           </div>
 
           {/* Mobile menu button */}
@@ -94,8 +95,9 @@ export default function Navigation() {
             <div className="border-t border-brand-border my-2" />
             <Link href="/pricing" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5">Pricing</Link>
             <Link href="/contact" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5">Contact</Link>
-            <div className="pt-2">
-              <Link href="/contact" onClick={() => setMobileOpen(false)} className="btn-primary w-full justify-center">Get Started</Link>
+            <div className="pt-2 space-y-2">
+              <a href="https://billing.voxclouds.com/signup/" target="_blank" rel="noopener noreferrer" className="btn-primary w-full justify-center flex">Sign Up</a>
+              <a href="https://billing.voxclouds.com" target="_blank" rel="noopener noreferrer" className="btn-secondary w-full justify-center flex">Login</a>
             </div>
           </div>
         </div>
