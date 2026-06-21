@@ -20,7 +20,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params
   const body = await req.json()
-  const { title, slug, excerpt, content, meta_title, meta_description, meta_keywords, cover_image, author, status } = body
+  const { title, slug, excerpt, content, meta_title, meta_description, meta_keywords, cover_image, author, status, scheduled_at } = body
 
   if (!title || !slug || !content) {
     return NextResponse.json({ error: 'Title, slug, and content are required' }, { status: 400 })
@@ -39,10 +39,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     publishedAt = new Date()
   }
 
+  const finalStatus = scheduled_at ? 'scheduled' : (status || 'draft')
+  const scheduledAt = scheduled_at ? new Date(scheduled_at) : null
+
   await db.query<ResultSetHeader>(
-    `UPDATE blog_posts SET title=?, slug=?, excerpt=?, content=?, meta_title=?, meta_description=?, meta_keywords=?, cover_image=?, author=?, status=?, published_at=?
+    `UPDATE blog_posts SET title=?, slug=?, excerpt=?, content=?, meta_title=?, meta_description=?, meta_keywords=?, cover_image=?, author=?, status=?, published_at=?, scheduled_at=?
      WHERE id=?`,
-    [title, slug, excerpt || '', content, meta_title || title, meta_description || excerpt || '', meta_keywords || '', cover_image || '', author || 'VoxClouds', status || 'draft', publishedAt, id]
+    [title, slug, excerpt || '', content, meta_title || title, meta_description || excerpt || '', meta_keywords || '', cover_image || '', author || 'VoxClouds', finalStatus, publishedAt, scheduledAt, id]
   )
 
   return NextResponse.json({ ok: true })

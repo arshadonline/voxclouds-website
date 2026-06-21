@@ -39,6 +39,9 @@ export default function EditBlogPostPage() {
   const [imagePrompt, setImagePrompt] = useState('')
   const [regeneratingImage, setRegeneratingImage] = useState(false)
   const [showAiPanel, setShowAiPanel] = useState(false)
+  const [scheduledDate, setScheduledDate] = useState('')
+  const [scheduledTime, setScheduledTime] = useState('09:00')
+  const [showSchedule, setShowSchedule] = useState(false)
 
   useEffect(() => {
     fetch(`/api/admin/blog/${id}`).then(r => r.json()).then(data => {
@@ -55,6 +58,12 @@ export default function EditBlogPostPage() {
         author: data.author || 'VoxClouds Editorial Team',
         status: data.status || 'draft',
       })
+      if (data.scheduled_at) {
+        const d = new Date(data.scheduled_at)
+        setScheduledDate(d.toISOString().slice(0, 10))
+        setScheduledTime(d.toISOString().slice(11, 16))
+        setShowSchedule(true)
+      }
       setLoading(false)
     })
 
@@ -142,6 +151,24 @@ export default function EditBlogPostPage() {
     setRegeneratingImage(false)
   }
 
+  async function handleSchedule() {
+    if (!scheduledDate) { setError('Please select a date'); return }
+    const scheduledAt = `${scheduledDate}T${scheduledTime || '09:00'}`
+    setSaving(true); setError('')
+    const res = await fetch(`/api/admin/blog/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...form, status: 'scheduled', scheduled_at: scheduledAt }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      router.push('/admin/blog')
+    } else {
+      setError(data.error || 'Failed to schedule')
+      setSaving(false)
+    }
+  }
+
   async function handleSave(status?: 'draft' | 'published') {
     setSaving(true); setError('')
     const res = await fetch(`/api/admin/blog/${id}`, {
@@ -192,14 +219,66 @@ export default function EditBlogPostPage() {
                 className="bg-navy-800 hover:bg-navy-700 border border-slate-700 text-slate-200 font-medium px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50">
                 Save Draft
               </button>
+              <button onClick={() => setShowSchedule(!showSchedule)} disabled={saving}
+                className="bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 text-amber-300 font-medium px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50">
+                {form.status === 'scheduled' ? 'Edit Schedule' : 'Schedule'}
+              </button>
               <button onClick={() => handleSave('published')} disabled={saving}
                 className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50">
-                Publish
+                Publish Now
               </button>
             </>
           )}
         </div>
       </div>
+
+      {/* Schedule Panel */}
+      {showSchedule && (
+        <div className="mb-6 bg-amber-900/10 border border-amber-500/30 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="text-sm font-semibold text-amber-300">
+              {form.status === 'scheduled' ? 'Edit Schedule' : 'Schedule Publication'}
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 mb-4">Pick a date and time. The post will be automatically published at the scheduled moment.</p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-amber-300/80 mb-1">Date</label>
+              <input
+                type="date"
+                value={scheduledDate}
+                onChange={e => setScheduledDate(e.target.value)}
+                min={new Date().toISOString().slice(0, 10)}
+                className="w-full px-4 py-2.5 rounded-xl bg-navy-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500"
+              />
+            </div>
+            <div className="w-32">
+              <label className="block text-xs font-medium text-amber-300/80 mb-1">Time</label>
+              <input
+                type="time"
+                value={scheduledTime}
+                onChange={e => setScheduledTime(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl bg-navy-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500"
+              />
+            </div>
+            <button
+              onClick={handleSchedule}
+              disabled={saving || !scheduledDate}
+              className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl text-sm transition-colors disabled:opacity-50 whitespace-nowrap"
+            >
+              {saving ? 'Scheduling...' : form.status === 'scheduled' ? 'Update Schedule' : 'Confirm Schedule'}
+            </button>
+          </div>
+          {scheduledDate && (
+            <p className="mt-3 text-xs text-amber-300/70">
+              Post will be automatically published on {new Date(`${scheduledDate}T${scheduledTime || '09:00'}`).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* AI Regeneration Section */}
       {showAiPanel && (
