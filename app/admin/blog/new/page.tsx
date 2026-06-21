@@ -35,7 +35,8 @@ export default function NewBlogPostPage() {
   const [modelUsed, setModelUsed] = useState('')
   const [imagePrompt, setImagePrompt] = useState('')
   const [regeneratingImage, setRegeneratingImage] = useState(false)
-  const [scheduledAt, setScheduledAt] = useState('')
+  const [scheduledDate, setScheduledDate] = useState('')
+  const [scheduledTime, setScheduledTime] = useState('09:00')
   const [showSchedule, setShowSchedule] = useState(false)
 
   useEffect(() => {
@@ -135,7 +136,8 @@ export default function NewBlogPostPage() {
   }
 
   async function handleSchedule() {
-    if (!scheduledAt) { setError('Please select a date and time'); return }
+    if (!scheduledDate) { setError('Please select a date'); return }
+    const scheduledAt = `${scheduledDate}T${scheduledTime || '09:00'}`
     setSaving(true); setError('')
     const res = await fetch('/api/admin/blog', {
       method: 'POST',
@@ -195,29 +197,45 @@ export default function NewBlogPostPage() {
 
       {/* Schedule Panel */}
       {showSchedule && (
-        <div className="mb-6 bg-amber-900/10 border border-amber-500/30 rounded-2xl p-4">
-          <div className="flex items-center gap-3">
+        <div className="mb-6 bg-amber-900/10 border border-amber-500/30 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="text-sm font-semibold text-amber-300">Schedule Publication</span>
+          </div>
+          <p className="text-xs text-slate-400 mb-4">Pick a date and time. The post will be automatically published at the scheduled moment.</p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-amber-300 mb-1">Schedule publish date & time</label>
+              <label className="block text-xs font-medium text-amber-300/80 mb-1">Date</label>
               <input
-                type="datetime-local"
-                value={scheduledAt}
-                onChange={e => setScheduledAt(e.target.value)}
-                min={new Date().toISOString().slice(0, 16)}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-navy-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500"
+                type="date"
+                value={scheduledDate}
+                onChange={e => setScheduledDate(e.target.value)}
+                min={new Date().toISOString().slice(0, 10)}
+                className="w-full px-4 py-2.5 rounded-xl bg-navy-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500"
+              />
+            </div>
+            <div className="w-32">
+              <label className="block text-xs font-medium text-amber-300/80 mb-1">Time</label>
+              <input
+                type="time"
+                value={scheduledTime}
+                onChange={e => setScheduledTime(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl bg-navy-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500"
               />
             </div>
             <button
               onClick={handleSchedule}
-              disabled={saving || !scheduledAt}
-              className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl text-sm transition-colors disabled:opacity-50 whitespace-nowrap mt-5"
+              disabled={saving || !scheduledDate}
+              className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl text-sm transition-colors disabled:opacity-50 whitespace-nowrap"
             >
               {saving ? 'Scheduling...' : 'Confirm Schedule'}
             </button>
           </div>
-          {scheduledAt && (
-            <p className="mt-2 text-xs text-amber-300/70">
-              Post will be automatically published on {new Date(scheduledAt).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })}
+          {scheduledDate && (
+            <p className="mt-3 text-xs text-amber-300/70">
+              Post will be automatically published on {new Date(`${scheduledDate}T${scheduledTime || '09:00'}`).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })}
             </p>
           )}
         </div>

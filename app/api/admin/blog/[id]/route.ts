@@ -32,10 +32,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: 'Slug already exists' }, { status: 400 })
   }
 
-  // Set published_at when first published
+  // Set published_at when first published (from draft or scheduled)
   const [current] = await db.query<RowDataPacket[]>('SELECT status, published_at FROM blog_posts WHERE id = ?', [id])
   let publishedAt = current[0]?.published_at
-  if (status === 'published' && current[0]?.status === 'draft') {
+  if (status === 'published' && (current[0]?.status === 'draft' || current[0]?.status === 'scheduled')) {
     publishedAt = new Date()
   }
 
