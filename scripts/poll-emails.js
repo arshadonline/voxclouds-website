@@ -54,7 +54,7 @@ const SPAM_PATTERNS = [
   /cold.?email/i,
   /bulk.?email/i,
   /email.?marketing.?campaign/i,
-  /unsubscribe|opt.?out|remove.?me/i,
+  // unsubscribe requests are handled separately — not treated as spam
   /website.?launches?\.(com|net|org)/i,
   /clutch\.co/i,
   /fiverr|upwork/i,
@@ -113,6 +113,22 @@ async function pollMailbox(mailbox, db) {
         // Skip our own outgoing emails
         if (IGNORE_FROM.some(ig => fromAddr.includes(ig))) {
           log(`[${mailbox.label}] Skipping own email from ${fromAddr}`)
+          continue
+        }
+
+        // Unsubscribe detection — mark customer as opted out
+        const unsubPattern = /\bunsubscribe\b|opt.?out|remove.?me|stop.?send/i
+        if (unsubPattern.test(subject) || (unsubPattern.test(body) && body.length < 200)) {
+          const [custRows] = await db.query(
+            'SELECT id, first_name, email FROM accounts WHERE email = ? AND type = 0 AND deleted = 0 LIMIT 1',
+            [fromAddr]
+          )
+          if (custRows.length > 0) {
+            await db.query('UPDATE accounts SET email_opt_out = 1 WHERE id = ?', [custRows[0].id])
+            log(`[${mailbox.label}] UNSUBSCRIBE: ${fromAddr} (account ${custRows[0].id}, ${custRows[0].first_name}) — marked email_opt_out=1`)
+          } else {
+            log(`[${mailbox.label}] UNSUBSCRIBE request from unknown email: ${fromAddr} — ignored`)
+          }
           continue
         }
 

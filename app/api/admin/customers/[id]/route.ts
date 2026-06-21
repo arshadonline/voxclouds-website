@@ -14,7 +14,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const [[account]] = await db.query<RowDataPacket[]>(
     `SELECT a.id, a.number, a.first_name, a.last_name, a.email, a.balance, a.credit_limit, a.status, a.creation,
             a.company_name, a.telephone_1, a.telephone_2, a.address_1, a.city, a.province, a.postal_code,
-            a.maxchannels, a.currency_id, a.type, a.country_id, c.country AS country_name
+            a.maxchannels, a.currency_id, a.type, a.country_id, c.country AS country_name,
+            IFNULL(a.email_opt_out, 0) AS email_opt_out
      FROM accounts a LEFT JOIN countrycode c ON a.country_id = c.id
      WHERE a.id=? AND a.deleted=0`,
     [id]
@@ -58,7 +59,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const body = await req.json()
 
   const allowed = ['first_name', 'last_name', 'email', 'company_name', 'telephone_1', 'telephone_2',
-                   'address_1', 'city', 'province', 'postal_code', 'maxchannels', 'credit_limit', 'status', 'country_id']
+                   'address_1', 'city', 'province', 'postal_code', 'maxchannels', 'credit_limit', 'status', 'country_id', 'email_opt_out']
   const sets: string[] = []
   const vals: any[] = []
 

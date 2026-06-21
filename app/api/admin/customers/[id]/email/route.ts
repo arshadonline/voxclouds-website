@@ -19,11 +19,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const [[account]] = await db.query<RowDataPacket[]>(
-    'SELECT id, first_name, last_name, email FROM accounts WHERE id=? AND deleted=0',
+    'SELECT id, first_name, last_name, email, email_opt_out FROM accounts WHERE id=? AND deleted=0',
     [id]
   )
   if (!account) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (!account.email) return NextResponse.json({ error: 'Customer has no email address' }, { status: 400 })
+  // Admin can still send even if opted out — just a warning in the UI
 
   const name = `${account.first_name} ${account.last_name || ''}`.trim()
   // Convert newlines to <br> for HTML

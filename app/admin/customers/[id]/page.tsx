@@ -9,6 +9,7 @@ interface Account {
   company_name: string; telephone_1: string; telephone_2: string
   address_1: string; city: string; province: string; postal_code: string
   maxchannels: number; type: number; country_id: number; country_name?: string
+  email_opt_out: number
 }
 
 interface SipDevice { id: number; username: string; alias: string | null; status: number; codec: string; creation_date: string }
@@ -205,6 +206,10 @@ export default function CustomerDetailPage() {
       subject: `Welcome to VoxClouds — how can we help you?`,
       message: `Hi ${data?.account?.first_name || ''},\n\nThanks for signing up with VoxClouds! We'd love to help you get the most out of our platform.\n\nCould you let us know what you're looking for?\n\n1. Personal international calling — affordable rates to 100+ countries\n2. Cloud PBX / business telephony — extensions, IVR, call routing\n3. DID / virtual phone numbers — local numbers in multiple countries\n4. Wholesale VoIP — carrier-grade termination for resellers\n\nAlso helpful to know:\n- Which countries do you call most?\n- How many users or extensions do you need?\n- Do you need a local phone number (DID)? If so, which country/city?\n\nJust reply to this email or WhatsApp us at +1 415 843-7100 — we'll get you set up right away.\n\nBest regards,\nVoxClouds Team`,
     },
+    re_engage: {
+      subject: `Your VoxClouds account is ready to use`,
+      message: `Hi ${data?.account?.first_name || ''},\n\nYou created a VoxClouds account a while ago. We noticed you haven't made your first call yet, and wanted to make sure everything is working for you.\n\nIf you ran into any issues during setup, or have questions about how the service works, our team is here to help.\n\nWhat you can do with VoxClouds:\n\n• International calls — Call 150+ countries at wholesale rates from your browser or SIP device.\n• Virtual numbers — Get local numbers in the US, UK, Canada, and more for incoming calls.\n• No contracts — Prepaid billing with no monthly fees. Pay only for what you use.\n\nIf you need help getting started, simply reply to this email. We typically respond within a few hours.\n\nBest regards,\nVoxClouds Team`,
+    },
     custom: { subject: '', message: '' },
   }
 
@@ -258,7 +263,7 @@ export default function CustomerDetailPage() {
               <span className={`px-2 py-0.5 rounded text-xs font-medium ${typeColor}`}>{typeLabel}</span>
             </div>
             <p className="text-slate-400 font-mono text-sm mt-1">{a.number}</p>
-            {a.email && <p className="text-slate-400 text-sm">{a.email}</p>}
+            {a.email && <p className="text-slate-400 text-sm">{a.email}{a.email_opt_out === 1 && <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-900/50 text-red-400">Unsubscribed</span>}</p>}
             {a.company_name && <p className="text-slate-500 text-sm">{a.company_name}</p>}
             {a.telephone_1 && <p className="text-slate-500 text-sm">Tel: {a.telephone_1}</p>}
             <div className="flex items-center gap-3 mt-3">
@@ -667,7 +672,16 @@ export default function CustomerDetailPage() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => { setEmailModal(false); setEmailSent(false) }}>
           <div className="bg-navy-800 rounded-xl border border-slate-700 p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-white mb-1">Send Email</h3>
-            <p className="text-sm text-slate-400 mb-4">To: {a.first_name} {a.last_name} ({a.email || 'No email'})</p>
+            <p className="text-sm text-slate-400 mb-2">To: {a.first_name} {a.last_name} ({a.email || 'No email'})</p>
+            {a.email_opt_out === 1 && (
+              <div className="bg-red-900/20 border border-red-700/50 rounded-lg px-3 py-2 mb-3 flex items-center justify-between">
+                <span className="text-red-400 text-xs font-medium">This customer has unsubscribed from emails</span>
+                <button onClick={async () => {
+                  await fetch(`/api/admin/customers/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email_opt_out: 0 }) })
+                  fetchData()
+                }} className="text-xs text-slate-400 hover:text-white underline ml-2">Re-enable</button>
+              </div>
+            )}
 
             {emailSent ? (
               <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-4 text-center">
@@ -688,6 +702,7 @@ export default function CustomerDetailPage() {
                       { key: 'rates', label: 'Rates Update' },
                       { key: 'service', label: 'Service Update' },
                       { key: 'followup', label: 'Follow Up' },
+                      { key: 're_engage', label: 'Re-engage' },
                       { key: 'custom', label: 'Custom' },
                     ].map(t => (
                       <button key={t.key} onClick={() => applyTemplate(t.key)}

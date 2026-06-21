@@ -109,13 +109,15 @@ async function main() {
     database: 'astpp',
   })
 
-  // Ensure tracking column exists
+  // Ensure tracking columns exist
   try {
     await db.query(`ALTER TABLE accounts ADD COLUMN re_engage_sent_at DATETIME DEFAULT NULL`)
     console.log(`[${new Date().toISOString()}] Added re_engage_sent_at column`)
-  } catch (e) {
-    // Column already exists — ignore
-  }
+  } catch (e) { /* already exists */ }
+  try {
+    await db.query(`ALTER TABLE accounts ADD COLUMN email_opt_out TINYINT(1) DEFAULT 0`)
+    console.log(`[${new Date().toISOString()}] Added email_opt_out column`)
+  } catch (e) { /* already exists */ }
 
   // Find customers who:
   // - type=0, active, not deleted
@@ -132,6 +134,7 @@ async function main() {
       AND balance = 0
       AND email IS NOT NULL AND email != ''
       AND re_engage_sent_at IS NULL
+      AND (email_opt_out IS NULL OR email_opt_out = 0)
       AND creation <= DATE_SUB(NOW(), INTERVAL 7 DAY)
     ORDER BY creation ASC
     LIMIT 20
