@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 
 interface AiModel {
@@ -232,52 +232,17 @@ export default function EditBlogPostPage() {
         </div>
       </div>
 
-      {/* Schedule Panel */}
+      {/* Schedule Panel with Calendar */}
       {showSchedule && (
-        <div className="mb-6 bg-amber-900/10 border border-amber-500/30 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="text-sm font-semibold text-amber-300">
-              {form.status === 'scheduled' ? 'Edit Schedule' : 'Schedule Publication'}
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mb-4">Pick a date and time. The post will be automatically published at the scheduled moment.</p>
-          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3">
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-amber-300/80 mb-1">Date</label>
-              <input
-                type="date"
-                value={scheduledDate}
-                onChange={e => setScheduledDate(e.target.value)}
-                min={new Date().toISOString().slice(0, 10)}
-                className="w-full px-4 py-2.5 rounded-xl bg-navy-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500"
-              />
-            </div>
-            <div className="w-32">
-              <label className="block text-xs font-medium text-amber-300/80 mb-1">Time</label>
-              <input
-                type="time"
-                value={scheduledTime}
-                onChange={e => setScheduledTime(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-navy-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500"
-              />
-            </div>
-            <button
-              onClick={handleSchedule}
-              disabled={saving || !scheduledDate}
-              className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl text-sm transition-colors disabled:opacity-50 whitespace-nowrap"
-            >
-              {saving ? 'Scheduling...' : form.status === 'scheduled' ? 'Update Schedule' : 'Confirm Schedule'}
-            </button>
-          </div>
-          {scheduledDate && (
-            <p className="mt-3 text-xs text-amber-300/70">
-              Post will be automatically published on {new Date(`${scheduledDate}T${scheduledTime || '09:00'}`).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })}
-            </p>
-          )}
-        </div>
+        <ScheduleCalendar
+          scheduledDate={scheduledDate}
+          scheduledTime={scheduledTime}
+          onDateChange={setScheduledDate}
+          onTimeChange={setScheduledTime}
+          onConfirm={handleSchedule}
+          saving={saving}
+          isEdit={form.status === 'scheduled'}
+        />
       )}
 
       {/* AI Regeneration Section */}
@@ -431,6 +396,126 @@ export default function EditBlogPostPage() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function ScheduleCalendar({ scheduledDate, scheduledTime, onDateChange, onTimeChange, onConfirm, saving, isEdit }: {
+  scheduledDate: string; scheduledTime: string; onDateChange: (d: string) => void; onTimeChange: (t: string) => void;
+  onConfirm: () => void; saving: boolean; isEdit: boolean;
+}) {
+  const [viewMonth, setViewMonth] = useState(() => {
+    if (scheduledDate) return new Date(scheduledDate + 'T00:00')
+    return new Date()
+  })
+
+  const today = new Date()
+  const todayStr = today.toISOString().slice(0, 10)
+
+  const days = useMemo(() => {
+    const year = viewMonth.getFullYear()
+    const month = viewMonth.getMonth()
+    const firstDay = new Date(year, month, 1).getDay()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const cells: (number | null)[] = []
+    for (let i = 0; i < firstDay; i++) cells.push(null)
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+    return cells
+  }, [viewMonth])
+
+  function formatDateStr(day: number) {
+    const y = viewMonth.getFullYear()
+    const m = String(viewMonth.getMonth() + 1).padStart(2, '0')
+    const d = String(day).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
+  function isPast(day: number) {
+    return formatDateStr(day) < todayStr
+  }
+
+  return (
+    <div className="mb-6 bg-amber-900/10 border border-amber-500/30 rounded-2xl p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <span className="text-sm font-semibold text-amber-300">
+          {isEdit ? 'Edit Schedule' : 'Schedule Publication'}
+        </span>
+      </div>
+      <p className="text-xs text-slate-400 mb-4">Pick a date and time. The post will be automatically published at the scheduled moment.</p>
+
+      {/* Calendar Grid */}
+      <div className="bg-navy-900 border border-slate-700 rounded-xl p-4 mb-4 max-w-sm">
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}
+            className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-white">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <span className="text-sm font-medium text-white">
+            {viewMonth.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+          </span>
+          <button onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}
+            className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-white">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-7 mb-1">
+          {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
+            <div key={d} className="text-center text-xs text-slate-500 py-1">{d}</div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-0.5">
+          {days.map((day, i) => {
+            if (day === null) return <div key={`e-${i}`} />
+            const dateStr = formatDateStr(day)
+            const isSelected = dateStr === scheduledDate
+            const isToday = dateStr === todayStr
+            const past = isPast(day)
+            return (
+              <button
+                key={i}
+                disabled={past}
+                onClick={() => onDateChange(dateStr)}
+                className={`h-8 w-full rounded-lg text-xs font-medium transition-colors
+                  ${past ? 'text-slate-600 cursor-not-allowed' : 'hover:bg-amber-600/20 text-slate-300 hover:text-white'}
+                  ${isSelected ? 'bg-amber-600 text-white hover:bg-amber-500' : ''}
+                  ${isToday && !isSelected ? 'ring-1 ring-amber-500/50' : ''}
+                `}
+              >
+                {day}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3">
+        <div className="w-32">
+          <label className="block text-xs font-medium text-amber-300/80 mb-1">Time</label>
+          <input
+            type="time"
+            value={scheduledTime}
+            onChange={e => onTimeChange(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl bg-navy-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500"
+          />
+        </div>
+        <button
+          onClick={onConfirm}
+          disabled={saving || !scheduledDate}
+          className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl text-sm transition-colors disabled:opacity-50 whitespace-nowrap"
+        >
+          {saving ? 'Scheduling...' : isEdit ? 'Update Schedule' : 'Confirm Schedule'}
+        </button>
+      </div>
+      {scheduledDate && (
+        <p className="mt-3 text-xs text-amber-300/70">
+          Post will be automatically published on {new Date(`${scheduledDate}T${scheduledTime || '09:00'}`).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })}
+        </p>
+      )}
     </div>
   )
 }
