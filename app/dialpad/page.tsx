@@ -167,6 +167,8 @@ export default function DialpadPage() {
       })
     ua.start()
     uaRef.current = ua
+    setStatus('Connecting...')
+    setCallState('connecting')
   }, [sipCfg])
 
   useEffect(() => {
@@ -182,9 +184,9 @@ export default function DialpadPage() {
       const ua: any = uaRef.current
       if (ua && typeof ua.isRegistered === 'function' && ua.isRegistered()) {
         setCallState(s => (s === 'idle' || s === 'connecting' || s === 'error') ? 'registered' : s)
-        setStatus(st => (st === 'Reconnecting…' || st === 'Connecting…' || st === 'Connecting...') ? 'Ready ✓' : st)
+        setStatus(st => (st !== 'Ready ✓' && st !== 'In call' && st !== 'Incoming call…' && st !== 'Calling…') ? 'Ready ✓' : st)
       }
-    }, 2000)
+    }, 1000)
     return () => clearInterval(id)
   }, [])
 

@@ -9,6 +9,7 @@ interface Post {
   status: string
   author: string
   published_at: string | null
+  scheduled_at: string | null
   created_at: string
 }
 
@@ -51,7 +52,7 @@ export default function AdminBlogPage() {
       </div>
 
       <div className="flex gap-2 mb-4">
-        {['', 'published', 'draft'].map(s => (
+        {['', 'published', 'draft', 'scheduled'].map(s => (
           <button key={s} onClick={() => setFilter(s)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               filter === s ? 'bg-blue-600 text-white' : 'bg-navy-800 text-slate-400 hover:text-white'
@@ -85,13 +86,21 @@ export default function AdminBlogPage() {
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                      post.status === 'published' ? 'bg-green-900/50 text-green-400' : 'bg-yellow-900/50 text-yellow-400'
+                      post.status === 'published' ? 'bg-green-900/50 text-green-400' :
+                      post.status === 'scheduled' ? 'bg-amber-900/50 text-amber-400' :
+                      'bg-yellow-900/50 text-yellow-400'
                     }`}>
                       {post.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-400 hidden md:table-cell">
-                    {new Date(post.published_at || post.created_at).toLocaleDateString()}
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    {post.status === 'published' && post.published_at ? (
+                      <span className="text-slate-400">{new Date(post.published_at).toLocaleDateString()}</span>
+                    ) : post.status === 'scheduled' && post.scheduled_at ? (
+                      <span className="text-amber-400 text-xs">Scheduled: {new Date(post.scheduled_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                    ) : (
+                      <span className="text-slate-500 text-xs">Draft</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">

@@ -219,6 +219,51 @@ export function adminTicketNotification(customerName: string, customerEmail: str
   }
 }
 
+export function reEngagementEmail(name: string, daysSinceSignup: number): { subject: string; html: string } {
+  const greeting = name ? `Hi ${name},` : 'Hi there,'
+  const timeframe = daysSinceSignup > 30 ? 'a while' : 'a few days'
+
+  return {
+    subject: `Your VoxClouds account is ready to use`,
+    html: emailWrapper(`
+      <h2 style="margin:0 0 16px;color:#1a1a2e;font-size:20px;font-weight:600">${greeting}</h2>
+
+      <p style="margin:0 0 16px;color:#4a5568;font-size:15px;line-height:1.7">
+        You created a VoxClouds account ${timeframe} ago. We noticed you haven't made your first call yet, and wanted to make sure everything is working for you.
+      </p>
+
+      <p style="margin:0 0 20px;color:#4a5568;font-size:15px;line-height:1.7">
+        If you ran into any issues during setup, or have questions about how the service works, our team is here to help.
+      </p>
+
+      <h3 style="margin:24px 0 12px;color:#1a1a2e;font-size:16px;font-weight:600">What you can do with VoxClouds</h3>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="padding:8px 0;color:#4a5568;font-size:14px;line-height:1.5">
+          <strong style="color:#1a1a2e">International calls</strong> — Call 150+ countries at wholesale rates from your browser or SIP device.
+        </td></tr>
+        <tr><td style="padding:8px 0;color:#4a5568;font-size:14px;line-height:1.5">
+          <strong style="color:#1a1a2e">Virtual numbers</strong> — Get local numbers in the US, UK, Canada, and more for incoming calls.
+        </td></tr>
+        <tr><td style="padding:8px 0;color:#4a5568;font-size:14px;line-height:1.5">
+          <strong style="color:#1a1a2e">No contracts</strong> — Prepaid billing with no monthly fees. Pay only for what you use.
+        </td></tr>
+      </table>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0">
+        <tr><td align="center">
+          <a href="https://app.voxclouds.com/login" style="display:inline-block;background:#2563eb;color:#ffffff;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:600">
+            Sign In to Your Account
+          </a>
+        </td></tr>
+      </table>
+
+      <p style="margin:0;color:#4a5568;font-size:14px;line-height:1.6">
+        If you need help getting started, simply reply to this email. We typically respond within a few hours.
+      </p>
+    `)
+  }
+}
+
 export function adminSignupNotification(name: string, email: string, phone: string, company: string, accountNumber: string): { subject: string; html: string } {
   return {
     subject: `New VoxClouds Signup: ${name}`,
