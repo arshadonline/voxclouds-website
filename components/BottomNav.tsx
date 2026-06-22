@@ -51,14 +51,23 @@ export default function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 max-w-sm mx-auto bg-navy-900 border-t border-slate-800 flex">
       {tabs.map(tab => {
         const active = path.startsWith(tab.href)
+        const isSupport = tab.href === '/support'
         return (
           <Link key={tab.href} href={tab.href}
             className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs transition-colors relative
-              ${active ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}>
+              ${active ? 'text-blue-400' : isSupport ? 'text-green-400 hover:text-green-300' : 'text-slate-500 hover:text-slate-300'}`}>
             <span className="relative">
               {tab.icon}
-              {tab.href === '/support' && unread > 0 && (
-                <span className="absolute -top-1.5 -right-2 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+              {/* Green pulsing online dot — always visible on Support */}
+              {isSupport && (
+                <span className="absolute -top-1 -right-1.5">
+                  <span className="absolute inline-flex h-2.5 w-2.5 rounded-full bg-green-400 opacity-75 animate-ping" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+                </span>
+              )}
+              {/* Unread badge overlays the green dot when there are unreads */}
+              {isSupport && unread > 0 && (
+                <span className="absolute -top-2 -right-3 w-4.5 h-4.5 min-w-[18px] min-h-[18px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-navy-900 animate-bounce" style={{ animationDuration: '2s' }}>
                   {unread > 9 ? '9+' : unread}
                 </span>
               )}
