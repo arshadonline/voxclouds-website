@@ -283,6 +283,56 @@ export function reEngagementEmail(name: string, daysSinceSignup: number): { subj
   }
 }
 
+export function trialCreditEmail(name: string): { subject: string; html: string } {
+  const greeting = name ? `Hi ${name},` : 'Hi,'
+  return {
+    subject: 'Your VoxClouds trial credit is ready',
+    html: emailWrapper(`
+      <h2 style="margin:0 0 16px;color:#1a1a2e;font-size:20px;font-weight:600">${greeting}</h2>
+
+      <p style="margin:0 0 16px;color:#4a5568;font-size:15px;line-height:1.7">
+        We have added <strong style="color:#1a1a2e">$0.50 trial credit</strong> to your VoxClouds account. You can use it to make international calls right from your browser.
+      </p>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin:24px 0">
+        <tr><td style="padding:20px 24px;text-align:center">
+          <p style="margin:0 0 4px;color:#166534;font-size:24px;font-weight:700">$0.50</p>
+          <p style="margin:0;color:#15803d;font-size:13px">Trial credit added to your account</p>
+        </td></tr>
+      </table>
+
+      <h3 style="margin:24px 0 12px;color:#1a1a2e;font-size:16px;font-weight:600">Try it now</h3>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="padding:8px 0;color:#4a5568;font-size:14px;line-height:1.5">
+          <strong style="color:#1a1a2e">1.</strong> Sign in at <a href="https://app.voxclouds.com/login" style="color:#2563eb;text-decoration:none">app.voxclouds.com</a>
+        </td></tr>
+        <tr><td style="padding:8px 0;color:#4a5568;font-size:14px;line-height:1.5">
+          <strong style="color:#1a1a2e">2.</strong> Enter any international number on the dialpad
+        </td></tr>
+        <tr><td style="padding:8px 0;color:#4a5568;font-size:14px;line-height:1.5">
+          <strong style="color:#1a1a2e">3.</strong> Press Call — your browser connects the call
+        </td></tr>
+      </table>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0">
+        <tr><td align="center">
+          <a href="https://app.voxclouds.com/dialpad" style="display:inline-block;background:#2563eb;color:#ffffff;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:600">
+            Make Your First Call
+          </a>
+        </td></tr>
+      </table>
+
+      <p style="margin:0 0 8px;color:#94a3b8;font-size:12px;line-height:1.5">
+        This trial credit is valid for 30 days. After that, any unused trial balance expires automatically.
+      </p>
+
+      <p style="margin:0;color:#4a5568;font-size:14px;line-height:1.6">
+        Questions? Reply to this email — we are happy to help.
+      </p>
+    `)
+  }
+}
+
 export function adminSignupNotification(name: string, email: string, phone: string, company: string, accountNumber: string): { subject: string; html: string } {
   return {
     subject: `New VoxClouds Signup: ${name}`,

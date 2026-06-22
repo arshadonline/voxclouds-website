@@ -9,7 +9,7 @@ interface Account {
   company_name: string; telephone_1: string; telephone_2: string
   address_1: string; city: string; province: string; postal_code: string
   maxchannels: number; type: number; country_id: number; country_name?: string
-  email_opt_out: number
+  email_opt_out: number; trial_balance: number; trial_credited_at: string | null
 }
 
 interface SipDevice { id: number; username: string; alias: string | null; status: number; codec: string; creation_date: string }
@@ -233,6 +233,17 @@ export default function CustomerDetailPage() {
     if (t) { setEmailSubject(t.subject); setEmailMessage(t.message) }
   }
 
+  async function handleTrialCredit() {
+    if (!confirm('Give $0.50 trial credit to this customer? This will send them an email.')) return
+    setSaving(true)
+    const res = await fetch(`/api/admin/customers/${id}/trial-credit`, { method: 'POST' })
+    const d = await res.json()
+    setSaving(false)
+    if (d.error) { alert(d.error); return }
+    fetchData()
+    fetchEmailLog()
+  }
+
   async function handleSendEmail() {
     if (!emailSubject.trim() || !emailMessage.trim()) return
     setSaving(true)
@@ -303,6 +314,12 @@ export default function CustomerDetailPage() {
                 className="px-3 py-1.5 rounded-lg bg-cyan-600/20 text-cyan-400 text-xs font-medium hover:bg-cyan-600/30 border border-cyan-600/30">
                 Send Email
               </button>
+              {!a.trial_credited_at && a.type === 0 && (
+                <button onClick={handleTrialCredit} disabled={saving}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-400 text-xs font-medium hover:bg-emerald-600/30 border border-emerald-600/30 disabled:opacity-50">
+                  Give $0.50 Trial
+                </button>
+              )}
               <button onClick={() => setConfirmAction(a.status === 0 ? 'suspend' : 'activate')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
                   a.status === 0
@@ -325,6 +342,12 @@ export default function CustomerDetailPage() {
               ${Number(a.balance).toFixed(2)}
             </p>
             {Number(a.credit_limit) > 0 && <p className="text-xs text-slate-500 mt-1">Credit: ${Number(a.credit_limit).toFixed(2)}</p>}
+            {a.trial_credited_at && (
+              <p className="text-xs mt-1">
+                <span className="text-emerald-400">Trial: ${Number(a.trial_balance).toFixed(2)}</span>
+                <span className="text-slate-600 ml-1">({new Date(a.trial_credited_at).toLocaleDateString()})</span>
+              </p>
+            )}
             <button onClick={() => setBalanceModal(true)}
               className="mt-3 w-full py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-medium transition-colors">
               + Add Balance

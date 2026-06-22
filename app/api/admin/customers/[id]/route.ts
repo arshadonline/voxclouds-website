@@ -15,7 +15,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     `SELECT a.id, a.number, a.first_name, a.last_name, a.email, a.balance, a.credit_limit, a.status, a.creation,
             a.company_name, a.telephone_1, a.telephone_2, a.address_1, a.city, a.province, a.postal_code,
             a.maxchannels, a.currency_id, a.type, a.country_id, c.country AS country_name,
-            IFNULL(a.email_opt_out, 0) AS email_opt_out
+            IFNULL(a.email_opt_out, 0) AS email_opt_out,
+            IFNULL(a.trial_balance, 0) AS trial_balance, a.trial_credited_at
      FROM accounts a LEFT JOIN countrycode c ON a.country_id = c.id
      WHERE a.id=? AND a.deleted=0`,
     [id]
