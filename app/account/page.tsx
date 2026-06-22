@@ -5,6 +5,13 @@ import BottomNav from '@/components/BottomNav'
 
 const PRESET_AMOUNTS = [5, 10, 25, 50]
 
+const COUNTRIES = [
+  'Pakistan', 'India', 'United States', 'United Kingdom', 'United Arab Emirates',
+  'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain', 'Oman', 'Canada', 'Germany',
+  'France', 'Australia', 'Malaysia', 'Philippines', 'Bangladesh', 'Nepal',
+  'Sri Lanka', 'Egypt', 'Nigeria', 'South Africa', 'Kenya', 'Turkey',
+]
+
 interface Payment { id: number; amount: number; payment_method: string; date: string }
 
 export default function AccountPage() {
@@ -14,9 +21,14 @@ export default function AccountPage() {
   const [amount, setAmount] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [bankRequested, setBankRequested] = useState(false)
   const [payments, setPayments] = useState<Payment[]>([])
   const [showHistory, setShowHistory] = useState(false)
+  const [showPayForm, setShowPayForm] = useState(false)
+  const [payMethod, setPayMethod] = useState('')
+  const [payCountry, setPayCountry] = useState('')
+  const [payCustom, setPayCustom] = useState('')
+  const [paySubmitting, setPaySubmitting] = useState(false)
+  const [paySubmitted, setPaySubmitted] = useState(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.location.search.includes('topup=success')) setSuccess(true)
@@ -54,18 +66,37 @@ export default function AccountPage() {
     }
   }
 
-  async function handleRequestBankDetails() {
-    setBankRequested(true)
-    await fetch('/api/topup/request', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: parseFloat(amount) || 0,
-        payment_method: 'bank_transfer',
-        payment_reference: '',
-        notes: 'Customer requested bank details for wire transfer',
-      }),
-    })
+  async function handlePaymentRequest() {
+    if (!payMethod) return
+    setPaySubmitting(true)
+    const methods: string[] = []
+    if (payMethod === 'paypal') methods.push('PayPal')
+    if (payMethod === 'local_bank') methods.push(`Local Bank Transfer (${payCountry || 'country not specified'})`)
+    if (payMethod === 'custom') methods.push(`Custom: ${payCustom || '(not specified)'}`)
+
+    const topupAmount = parseFloat(amount) || 0
+    const subject = `Payment Request — $${topupAmount.toFixed(2)} via ${methods.join(', ')}`
+    const message = [
+      `I want to top up my account with $${topupAmount.toFixed(2)}.`,
+      '',
+      `Preferred payment method: ${methods.join(', ')}`,
+      payCountry ? `Country: ${payCountry}` : '',
+      payMethod === 'custom' && payCustom ? `Details: ${payCustom}` : '',
+      '',
+      'Please send me the payment details so I can proceed.',
+    ].filter(Boolean).join('\n')
+
+    try {
+      await fetch('/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, message }),
+      })
+      setPaySubmitted(true)
+    } catch {
+      alert('Failed to submit request. Please try again.')
+    }
+    setPaySubmitting(false)
   }
 
   async function logout() {
@@ -149,19 +180,66 @@ export default function AccountPage() {
           <div className="flex-1 h-px bg-slate-700" />
         </div>
 
-        {bankRequested ? (
+        {paySubmitted ? (
           <div className="text-sm text-green-400 bg-green-900/20 rounded-xl px-4 py-3 border border-green-800/30">
-            Bank details will be sent to your email shortly.
+            Your payment request has been submitted! We&apos;ll reply with payment details shortly.
           </div>
-        ) : (
-          <button onClick={handleRequestBankDetails}
-            className="w-full py-3 rounded-xl border border-slate-600 text-slate-300 hover:bg-navy-700 text-sm font-semibold transition-colors mb-2">
-            Bank Wire Transfer
+        ) : !showPayForm ? (
+          <button onClick={() => setShowPayForm(true)}
+            className="w-full py-3 rounded-xl border border-slate-600 text-slate-300 hover:bg-navy-700 text-sm font-semibold transition-colors">
+            I Want to Pay Another Way
           </button>
+        ) : (
+          <div className="bg-navy-900 rounded-xl p-4 border border-slate-700">
+            <h3 className="text-sm font-semibold text-white mb-3">I Want to Pay</h3>
+            <p className="text-xs text-slate-400 mb-3">Select your preferred payment method and we&apos;ll send you the details.</p>
+
+            <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-navy-800 cursor-pointer transition-colors">
+              <input type="radio" name="payMethod" value="paypal"
+                checked={payMethod === 'paypal'} onChange={() => setPayMethod('paypal')}
+                className="w-4 h-4 accent-blue-500" />
+              <span className="text-sm text-white">PayPal</span>
+            </label>
+
+            <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-navy-800 cursor-pointer transition-colors">
+              <input type="radio" name="payMethod" value="local_bank"
+                checked={payMethod === 'local_bank'} onChange={() => setPayMethod('local_bank')}
+                className="w-4 h-4 accent-blue-500" />
+              <span className="text-sm text-white">My Local Bank in My Country</span>
+            </label>
+            {payMethod === 'local_bank' && (
+              <select value={payCountry} onChange={e => setPayCountry(e.target.value)}
+                className="w-full mt-2 ml-7 px-3 py-2 rounded-lg bg-navy-800 border border-slate-600 text-white text-sm focus:outline-none focus:border-blue-500" style={{ width: 'calc(100% - 1.75rem)' }}>
+                <option value="">Select your country</option>
+                {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            )}
+
+            <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-navy-800 cursor-pointer transition-colors">
+              <input type="radio" name="payMethod" value="custom"
+                checked={payMethod === 'custom'} onChange={() => setPayMethod('custom')}
+                className="w-4 h-4 accent-blue-500" />
+              <span className="text-sm text-white">Other Payment Method</span>
+            </label>
+            {payMethod === 'custom' && (
+              <input type="text" placeholder="Describe your preferred payment method..."
+                value={payCustom} onChange={e => setPayCustom(e.target.value)}
+                className="w-full mt-2 ml-7 px-3 py-2 rounded-lg bg-navy-800 border border-slate-600 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500" style={{ width: 'calc(100% - 1.75rem)' }} />
+            )}
+
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => { setShowPayForm(false); setPayMethod(''); setPayCountry(''); setPayCustom('') }}
+                className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-400 text-sm font-medium hover:bg-navy-800 transition-colors">
+                Cancel
+              </button>
+              <button onClick={handlePaymentRequest}
+                disabled={paySubmitting || !payMethod || (payMethod === 'local_bank' && !payCountry) || (payMethod === 'custom' && !payCustom)}
+                className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-sm font-semibold transition-colors">
+                {paySubmitting ? 'Submitting...' : 'Submit Request'}
+              </button>
+            </div>
+          </div>
         )}
-        <p className="text-[11px] text-slate-500 text-center leading-relaxed">
-          For local payment options (JazzCash, EasyPaisa, local bank), <a href="mailto:support@voxclouds.com" className="text-blue-400 hover:underline">contact us</a> or WhatsApp <a href="https://wa.me/14158437100" className="text-blue-400 hover:underline">+1 415 843-7100</a>
-        </p>
       </div>
 
       {/* Payment History */}
