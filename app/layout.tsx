@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import Script from 'next/script'
 import './globals.css'
 import ChatWidgetLoader from '@/components/ChatWidgetLoader'
 
@@ -22,15 +21,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-HE1VG6RKXM" strategy="afterInteractive" />
-        <Script id="gtag-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-HE1VG6RKXM');
-          `}
-        </Script>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-334491476" />
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'AW-334491476');
+          gtag('config', 'G-HE1VG6RKXM');
+        `}} />
       </head>
       <body className="min-h-screen bg-navy-950 text-slate-100 antialiased">
         {children}

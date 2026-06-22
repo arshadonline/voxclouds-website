@@ -129,15 +129,23 @@ export default function AccountPage() {
           className="w-full px-4 py-2.5 rounded-xl bg-navy-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 mb-4"
         />
 
+        {/* Visa/Mastercard Pay Button */}
         <button onClick={handleOnlinePay}
           disabled={loading || !amount || parseFloat(amount) < 5}
-          className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-sm font-semibold transition-colors mb-3">
-          {loading ? 'Redirecting...' : `Pay $${parseFloat(amount || '0').toFixed(2)} Online`}
+          className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-sm font-semibold transition-colors mb-2">
+          {loading ? 'Redirecting to secure checkout...' : `Pay $${parseFloat(amount || '0').toFixed(2)} with Card`}
         </button>
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg">
+            <svg viewBox="0 0 48 32" className="h-5 w-auto"><rect width="48" height="32" rx="4" fill="#1A1F71"/><path d="M19.5 21h-3.2l2-12.4h3.2L19.5 21zm13.3-12.1a7.9 7.9 0 00-2.9-.5c-3.2 0-5.4 1.7-5.4 4.1 0 1.8 1.6 2.8 2.8 3.4 1.2.6 1.6 1 1.6 1.5 0 .8-1 1.2-1.9 1.2-1.3 0-1.9-.2-3-.7l-.4-.2-.4 2.7a9.5 9.5 0 003.4.6c3.4 0 5.6-1.7 5.6-4.2 0-1.4-.8-2.5-2.7-3.4-1.1-.6-1.8-1-1.8-1.5 0-.5.6-1 1.8-1 1 0 1.8.2 2.4.5l.3.1.4-2.6zm8.3-.3h-2.5c-.8 0-1.3.2-1.7 1l-4.7 11.4h3.4l.7-1.9h4.1l.4 1.9H44l-2.9-12.4zm-3.9 8c.3-.7 1.3-3.5 1.3-3.5l.3-.9.2.8s.6 3 .8 3.6h-2.6zM15.9 8.6l-3 8.5-.3-1.6c-.6-1.9-2.3-4-4.2-5l2.8 10.5h3.4l5.1-12.4h-3.4" fill="#fff"/><path d="M10.4 8.6H5.1l-.1.3c4 1 6.7 3.5 7.8 6.5l-1.1-5.7c-.2-.8-.8-1-1.3-1.1" fill="#F9A533"/></svg>
+            <svg viewBox="0 0 48 32" className="h-5 w-auto"><rect width="48" height="32" rx="4" fill="#252525"/><circle cx="19" cy="16" r="10" fill="#EB001B"/><circle cx="29" cy="16" r="10" fill="#F79E1B"/><path d="M24 8.8a10 10 0 013.8 7.2 10 10 0 01-3.8 7.2 10 10 0 01-3.8-7.2A10 10 0 0124 8.8z" fill="#FF5F00"/></svg>
+          </div>
+          <span className="text-[10px] text-slate-500">Secure payment via SSL</span>
+        </div>
 
         <div className="flex items-center gap-3 mb-3">
           <div className="flex-1 h-px bg-slate-700" />
-          <span className="text-xs text-slate-500">or</span>
+          <span className="text-xs text-slate-500">other payment options</span>
           <div className="flex-1 h-px bg-slate-700" />
         </div>
 
@@ -147,10 +155,13 @@ export default function AccountPage() {
           </div>
         ) : (
           <button onClick={handleRequestBankDetails}
-            className="w-full py-3 rounded-xl border border-slate-600 text-slate-300 hover:bg-navy-700 text-sm font-semibold transition-colors">
-            Request Bank Details for Wire Transfer
+            className="w-full py-3 rounded-xl border border-slate-600 text-slate-300 hover:bg-navy-700 text-sm font-semibold transition-colors mb-2">
+            Bank Wire Transfer
           </button>
         )}
+        <p className="text-[11px] text-slate-500 text-center leading-relaxed">
+          For local payment options (JazzCash, EasyPaisa, local bank), <a href="mailto:support@voxclouds.com" className="text-blue-400 hover:underline">contact us</a> or WhatsApp <a href="https://wa.me/14158437100" className="text-blue-400 hover:underline">+1 415 843-7100</a>
+        </p>
       </div>
 
       {/* Payment History */}
