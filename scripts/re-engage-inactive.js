@@ -18,6 +18,7 @@
 
 const mysql = require('mysql2/promise')
 const nodemailer = require('nodemailer')
+const crypto = require('crypto')
 
 const transporter = nodemailer.createTransport({
   host: 'mail.watnidigital.com',
@@ -151,18 +152,26 @@ async function main() {
   let sent = 0
   for (const row of rows) {
     const { subject, html } = buildEmail(row.first_name, row.days_since_signup)
+    const trackId = crypto.randomBytes(16).toString('hex')
+    const pixel = `<img src="https://app.voxclouds.com/api/track/open?t=${trackId}" width="1" height="1" style="display:none" alt="" />`
+    const htmlWithPixel = html.replace('</body>', `${pixel}</body>`)
     try {
       await transporter.sendMail({
         from: '"VoxClouds" <support@voxclouds.com>',
         replyTo: 'support@voxclouds.com',
         to: row.email,
         subject,
-        html,
+        html: htmlWithPixel,
         headers: {
           'List-Unsubscribe': '<mailto:support@voxclouds.com?subject=Unsubscribe>',
           'Precedence': 'bulk',
         },
       })
+      // Log email for tracking
+      await db.query(
+        'INSERT INTO email_log (accountid, email_to, subject, template, track_id) VALUES (?, ?, ?, ?, ?)',
+        [row.id, row.email, subject, 're-engage', trackId]
+      ).catch(() => {})
       // Mark as sent
       await db.query('UPDATE accounts SET re_engage_sent_at = NOW() WHERE id = ?', [row.id])
       sent++

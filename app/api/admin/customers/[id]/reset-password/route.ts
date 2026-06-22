@@ -61,7 +61,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (account.email) {
     const name = `${account.first_name} ${account.last_name || ''}`.trim()
     const email = passwordResetEmail(name, account.number, newPassword)
-    sendMail(account.email, email.subject, email.html).catch(err => {
+    sendMail(account.email, email.subject, email.html, { accountId: account.id, template: 'password_reset' }).catch(err => {
       console.error('Password reset email failed:', err)
     })
   }

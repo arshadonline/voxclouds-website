@@ -31,7 +31,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const messageHtml = message.trim().replace(/\n/g, '<br>')
   const email = customerEmail(name, subject.trim(), messageHtml)
 
-  await sendMail(account.email, email.subject, email.html)
+  await sendMail(account.email, email.subject, email.html, {
+    accountId: account.id,
+    template: body.template || 'custom',
+  })
 
   return NextResponse.json({ success: true })
 }

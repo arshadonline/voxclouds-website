@@ -22,7 +22,7 @@ export default function CustomerDetailPage() {
   const router = useRouter()
   const [data, setData] = useState<{ account: Account; sipDevices: SipDevice[]; cdrs: CDR[]; payments: Payment[]; recharges: Recharge[] } | null>(null)
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'cdrs' | 'payments' | 'recharges' | 'sip'>('cdrs')
+  const [tab, setTab] = useState<'cdrs' | 'payments' | 'recharges' | 'sip' | 'emails'>('cdrs')
   const [balanceModal, setBalanceModal] = useState(false)
   const [amount, setAmount] = useState('')
   const [notes, setNotes] = useState('')
@@ -53,6 +53,9 @@ export default function CustomerDetailPage() {
   const [emailSubject, setEmailSubject] = useState('')
   const [emailMessage, setEmailMessage] = useState('')
   const [emailSent, setEmailSent] = useState(false)
+  // Email log state
+  const [emailLog, setEmailLog] = useState<{ id: number; subject: string; template: string; sent_at: string; opened_at: string | null; open_count: number }[]>([])
+  const [emailStats, setEmailStats] = useState<{ total: number; opened: number; lastOpen: string | null }>({ total: 0, opened: 0, lastOpen: null })
 
   async function fetchData() {
     const res = await fetch(`/api/admin/customers/${id}`)
@@ -61,7 +64,18 @@ export default function CustomerDetailPage() {
     setLoading(false)
   }
 
-  useEffect(() => { fetchData() }, [id])
+  async function fetchEmailLog() {
+    try {
+      const res = await fetch(`/api/admin/customers/${id}/emails`)
+      if (res.ok) {
+        const d = await res.json()
+        setEmailLog(d.emails || [])
+        setEmailStats(d.stats || { total: 0, opened: 0, lastOpen: null })
+      }
+    } catch {}
+  }
+
+  useEffect(() => { fetchData(); fetchEmailLog() }, [id])
 
   async function handleAddBalance() {
     if (!amount) return
@@ -225,12 +239,13 @@ export default function CustomerDetailPage() {
     const res = await fetch(`/api/admin/customers/${id}/email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subject: emailSubject, message: emailMessage }),
+      body: JSON.stringify({ subject: emailSubject, message: emailMessage, template: emailTemplate }),
     })
     const d = await res.json()
     setSaving(false)
     if (d.error) { alert(d.error); return }
     setEmailSent(true)
+    fetchEmailLog()
     setTimeout(() => { setEmailModal(false); setEmailSent(false); setEmailSubject(''); setEmailMessage(''); setEmailTemplate('custom') }, 2000)
   }
 
@@ -244,11 +259,12 @@ export default function CustomerDetailPage() {
   function fmtDuration(s: number) { const m = Math.floor(s / 60); const sec = s % 60; return m > 0 ? `${m}m ${sec}s` : `${sec}s` }
 
   const tabs = [
-    { key: 'cdrs', label: 'Calls', count: data.cdrs.length },
-    { key: 'payments', label: 'Payments', count: data.payments.length },
-    { key: 'recharges', label: 'Recharges', count: data.recharges.length },
-    { key: 'sip', label: 'SIP Devices', count: data.sipDevices.length },
-  ] as const
+    { key: 'cdrs' as const, label: 'Calls', count: data.cdrs.length },
+    { key: 'payments' as const, label: 'Payments', count: data.payments.length },
+    { key: 'recharges' as const, label: 'Recharges', count: data.recharges.length },
+    { key: 'sip' as const, label: 'SIP Devices', count: data.sipDevices.length },
+    { key: 'emails' as const, label: 'Emails', count: emailStats.total },
+  ]
 
   return (
     <div>
@@ -456,6 +472,76 @@ export default function CustomerDetailPage() {
                           className="text-red-400 hover:text-red-300 text-xs font-medium">Delete</button>
                       </div>
                     </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {tab === 'emails' && (
+          <div>
+            {/* Email Stats Summary */}
+            <div className="flex items-center gap-6 px-5 py-4 border-b border-slate-700/50">
+              <div>
+                <p className="text-2xl font-bold text-white">{emailStats.total}</p>
+                <p className="text-[10px] text-slate-500 uppercase">Sent</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-green-400">{emailStats.opened}</p>
+                <p className="text-[10px] text-slate-500 uppercase">Opened</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-400">{emailStats.total > 0 ? Math.round((emailStats.opened / emailStats.total) * 100) : 0}%</p>
+                <p className="text-[10px] text-slate-500 uppercase">Open Rate</p>
+              </div>
+              {emailStats.lastOpen && (
+                <div className="ml-auto text-right">
+                  <p className="text-xs text-slate-400">Last opened</p>
+                  <p className="text-xs text-white">{new Date(emailStats.lastOpen).toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-slate-400 text-xs uppercase">
+                  <th className="text-left px-5 py-3">Subject</th>
+                  <th className="text-left px-5 py-3">Type</th>
+                  <th className="text-left px-5 py-3">Sent</th>
+                  <th className="text-left px-5 py-3">Status</th>
+                  <th className="text-right px-5 py-3">Opens</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700/50">
+                {emailLog.length === 0 ? (
+                  <tr><td colSpan={5} className="px-5 py-8 text-center text-slate-500">No emails sent yet. Emails sent from now will be tracked here.</td></tr>
+                ) : emailLog.map(e => (
+                  <tr key={e.id} className="hover:bg-navy-700/50">
+                    <td className="px-5 py-3 text-white max-w-[200px] truncate">{e.subject}</td>
+                    <td className="px-5 py-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                        e.template === 'welcome' ? 'bg-blue-900/50 text-blue-400'
+                        : e.template === 're-engage' ? 'bg-yellow-900/50 text-yellow-400'
+                        : e.template === 'password_reset' ? 'bg-orange-900/50 text-orange-400'
+                        : 'bg-slate-800 text-slate-400'
+                      }`}>{e.template}</span>
+                    </td>
+                    <td className="px-5 py-3 text-slate-400 text-xs">{new Date(e.sent_at).toLocaleString()}</td>
+                    <td className="px-5 py-3">
+                      {e.opened_at ? (
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-green-500" />
+                          <span className="text-green-400 text-xs">Opened {new Date(e.opened_at).toLocaleDateString()}</span>
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-slate-600" />
+                          <span className="text-slate-500 text-xs">Not opened</span>
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-right text-slate-300">{e.open_count || 0}</td>
                   </tr>
                 ))}
               </tbody>

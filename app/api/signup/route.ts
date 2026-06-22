@@ -97,9 +97,9 @@ export async function POST(req: NextRequest) {
       ]
     )
 
-    // Send welcome email (non-blocking)
+    // Send welcome email (non-blocking, tracked)
     const welcome = welcomeEmail(firstName.trim(), accountNumber, password)
-    sendMail(email.trim(), welcome.subject, welcome.html).catch(err => {
+    sendMail(email.trim(), welcome.subject, welcome.html, { accountId, template: 'welcome' }).catch(err => {
       console.error('Welcome email failed:', err)
     })
 

@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer'
+import crypto from 'crypto'
+import db from '@/lib/db'
 
 const transporter = nodemailer.createTransport({
   host: 'mail.watnidigital.com',
@@ -11,13 +13,30 @@ const transporter = nodemailer.createTransport({
   tls: { rejectUnauthorized: false },
 })
 
-export async function sendMail(to: string, subject: string, html: string) {
+interface SendMailOpts {
+  accountId?: number
+  template?: string
+}
+
+export async function sendMail(to: string, subject: string, html: string, opts?: SendMailOpts) {
+  const trackId = crypto.randomBytes(16).toString('hex')
+  const pixel = `<img src="https://app.voxclouds.com/api/track/open?t=${trackId}" width="1" height="1" style="display:none" alt="" />`
+  const htmlWithPixel = html.replace('</body>', `${pixel}</body>`)
+
+  // Log to email_log
+  try {
+    await db.query(
+      'INSERT INTO email_log (accountid, email_to, subject, template, track_id) VALUES (?, ?, ?, ?, ?)',
+      [opts?.accountId || 0, to, subject.substring(0, 500), opts?.template || 'custom', trackId]
+    )
+  } catch {}
+
   return transporter.sendMail({
     from: '"VoxClouds Support" <support@voxclouds.com>',
     replyTo: 'support@voxclouds.com',
     to,
     subject,
-    html,
+    html: htmlWithPixel,
     headers: {
       'List-Unsubscribe': '<mailto:support@voxclouds.com?subject=Unsubscribe>',
     },
