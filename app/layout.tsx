@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
-import ChatWidgetLoader from '@/components/ChatWidgetLoader'
 
 export const metadata: Metadata = {
   title: 'VoxClouds',
@@ -32,7 +31,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-navy-950 text-slate-100 antialiased">
         {children}
-        <ChatWidgetLoader />
       </body>
     </html>
   )
